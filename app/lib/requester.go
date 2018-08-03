@@ -6,6 +6,8 @@ import (
 	"math/rand"
 	"net/http"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 const (
@@ -17,20 +19,22 @@ const (
 // Requester performs HTTP requests at a pre-defined interval and logs error or slow
 // response. It also writes the result in a channel for statistics
 type Requester struct {
-	stopCh    chan struct{}
-	interval  int
-	timeout   int
-	url       string
-	measureCh chan int64
+	stopCh      chan struct{}
+	interval    int
+	timeout     int
+	url         string
+	measureCh   chan int64
+	jobsInQueue prometheus.Gauge
 }
 
-func NewRequester(interval int, timeout int, url string, measureCh chan int64) *Requester {
+func NewRequester(interval int, timeout int, url string, measureCh chan int64, jobsInQueue prometheus.Gauge) *Requester {
 	return &Requester{
-		stopCh:    make(chan struct{}),
-		interval:  interval,
-		timeout:   timeout,
-		url:       url,
-		measureCh: measureCh,
+		stopCh:      make(chan struct{}),
+		interval:    interval,
+		timeout:     timeout,
+		url:         url,
+		measureCh:   measureCh,
+		jobsInQueue: jobsInQueue,
 	}
 }
 
