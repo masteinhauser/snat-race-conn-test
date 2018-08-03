@@ -12,7 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	flags "github.com/jessevdk/go-flags"
 
-	"github.com/maxlaverse/snat-race-conn-test/lib"
+	"github.com/azman0101/snat-race-conn-test/lib"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -72,7 +72,7 @@ func main() {
 	log.Printf("Preparing %d requesters with a %d us interval on %s", opts.Concurrency, opts.Interval, opts.URL)
 	requesters := []*lib.Requester{}
 	for i := 0; i < opts.Concurrency; i++ {
-		requesters = append(requesters, lib.NewRequester(opts.Interval, opts.Timeout, opts.URL, measureCh))
+		requesters = append(requesters, lib.NewRequester(opts.Interval, opts.Timeout, opts.URL, measureCh, jobsInQueue))
 	}
 
 	log.Println("Starting requesters")
@@ -86,7 +86,6 @@ func main() {
 	ticket := time.NewTicker(time.Second * time.Duration(opts.PrintInterval))
 Loop:
 	for {
-		jobsInQueue.Inc()
 		select {
 		case measure := <-measureCh:
 			measures = append(measures, measure)
