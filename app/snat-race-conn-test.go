@@ -3,13 +3,28 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/gorilla/mux"
 	flags "github.com/jessevdk/go-flags"
+
 	"github.com/maxlaverse/snat-race-conn-test/lib"
+	"github.com/prometheus/client_golang/prometheus"
+)
+
+func prometheusHandler() http.Handler {
+	return prometheus.Handler()
+}
+
+var jobsInQueue = prometheus.NewGauge(
+	prometheus.GaugeOpts{
+		Name: "jobs_in_queue",
+		Help: "Current number of jobs in the queue",
+	},
 )
 
 var opts struct {
@@ -20,7 +35,23 @@ var opts struct {
 	PrintInterval int    `env:"PRINTINTERVAL" short:"p" long:"print-interval" description:"Interval between two stats prints, in seconds" default:"30"`
 }
 
+func init() {
+	prometheus.MustRegister(jobsInQueue)
+}
+
 func main() {
+	print("Start Server...")
+	r := mux.NewRouter()
+	r.Handle("/metrics", prometheusHandler())
+	s := &http.Server{
+		Addr:           ":8080",
+		ReadTimeout:    8 * time.Second,
+		WriteTimeout:   8 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+		Handler:        r,
+	}
+	go func() { log.Fatal(s.ListenAndServe()) }()
+	print("Start Requests...")
 	// Parse command line arguments
 	_, err := flags.ParseArgs(&opts, os.Args)
 	if err != nil {
@@ -55,6 +86,7 @@ func main() {
 	ticket := time.NewTicker(time.Second * time.Duration(opts.PrintInterval))
 Loop:
 	for {
+		jobsInQueue.Inc()
 		select {
 		case measure := <-measureCh:
 			measures = append(measures, measure)
