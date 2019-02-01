@@ -12,7 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	flags "github.com/jessevdk/go-flags"
 
-	"github.com/azman0101/snat-race-conn-test/lib"
+	"github.com/masteinhauser/snat-race-conn-test/app/lib"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
