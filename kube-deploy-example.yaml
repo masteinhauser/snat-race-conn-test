@@ -1,0 +1,36 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: snat-race-conn-test
+  namespace: core-testing-platform
+  labels:
+    app: snat-race-conn-test
+spec:
+  replicas: 18
+  selector:
+    matchLabels:
+      app: snat-race-conn-test
+  template:
+    metadata:
+      labels:
+        app: snat-race-conn-test
+      annotations:
+        platform.bose.io/prometheus: "true"
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "8080"
+    spec:
+      nodeSelector:
+        node-role.kubernetes.io/node: "test_performance"
+      tolerations:
+        - key: "test_performance"
+          value: "true"
+          effect: NoSchedule
+      containers:
+        - name: snat-race-conn-test
+          image: masteinhauser/snat-race-conn-test:latest
+          args:
+            - --concurrency=3
+            - --interval=5
+            - --url=http://elasticsearch.core-logging-nonprod:9200
